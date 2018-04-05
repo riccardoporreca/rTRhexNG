@@ -37,7 +37,11 @@ ui <- fluidPage(
                   min = 0,
                   max = 6,
                   step = 0.1,
-                  value = 0),
+                  value = 0.1,
+                  animate = animationOptions(
+                    interval = 200,
+                    loop = FALSE
+                  )),
 
       sliderInput(inputId = "jump_size",
                   label = "jump ahead by number of steps",
@@ -45,7 +49,7 @@ ui <- fluidPage(
                   post = ")",
                   min = 0,
                   max = 50,
-                  value = 0),
+                  value = 3),
 
       sliderInput(inputId = "n_jump",
                   label = NULL, # "# elements jump sequence",
@@ -59,14 +63,14 @@ ui <- fluidPage(
                   pre = "p=",
                   min = 0,
                   max = 50,
-                  value = 0),
+                  value = 9),
 
       sliderInput(inputId = "split_s",
                   label = NULL, # "split sub-sequence [1, p]",
                   pre = "s=",
                   min = 0,
                   max = 50,
-                  value = 0),
+                  value = 5),
 
       sliderInput(inputId = "n_split",
                   label = NULL, # "# elements split sequence",
