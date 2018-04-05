@@ -132,9 +132,15 @@ ui <- fluidPage(
 
       ),
 
-      downloadButton("save_png", "Save as PNG"),
-      downloadButton("save_svg", "Save as SVG"),
-      downloadButton("save_R", "Download R code"),
+      fluidRow(
+        column(2,
+               selectInput("svg_postprocess", label = NULL, #width = "16%",
+                           choices = c("as-is", "inkscape", "inkscape-text2path"))),
+        column(6,
+               downloadButton("save_png", "Save as PNG"),
+               downloadButton("save_svg", "Save as SVG"),
+               downloadButton("save_R", "Download R code"))
+      ),
 
       NULL
 
@@ -177,6 +183,8 @@ server <- function(input, output) {
       text_col <- input$text_col
       bg_col <- input$bg_col
       n_full <- max(1L, ceiling(input$n * input$n_full_n))
+      inkscape <- input$svg_postprocess == "inkscape"
+      text2path <- input$svg_postprocess == "inkscape-text2path"
     })
   })
 

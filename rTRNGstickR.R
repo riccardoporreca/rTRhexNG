@@ -17,8 +17,9 @@ rTRNGstickR <- function(
   box_split_col = split_col, # color of the split box
   text_size, # rTRNG text size (fraction of hexagon inside)
   text_col, # rTRNG text color
-  hex_height = 50.8 # mm
-
+  hex_height = 50.8, # mm
+  text2path = TRUE,
+  inkscape = TRUE
 ) {
 
 
@@ -295,7 +296,7 @@ viewBox="0 0 @w@ @h@">
   <text
     id="text-@id@"
     style="text-anchor:middle;font-style:normal;font-variant:normal;
-    font-weight:normal;font-stretch:normal;font-size:@size@;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;
+    font-weight:normal;font-stretch:normal;font-size:@size@;font-family:DejaVu Sans;letter-spacing:0px;word-spacing:0px;
     fill:@color@;fill-opacity:1;stroke:none"
     x="@x@"
     y="@y@"
@@ -325,13 +326,6 @@ viewBox="0 0 @w@ @h@">
     svg_txt("G", x0R + 2*Dx, y0 + 2*Dy, text_size),
     NULL
   )
-
-  tmp <- '
-<path
-  d="M10,10 A15,15 0 0,1 30,10 L 25,15 A12,12 0 0,0 15,15 Z"
-  style="stroke:blue; fill:blue; stroke-width:none"
-/>'
-
 
   writeLines(.sub(
     svg,
@@ -363,10 +357,19 @@ viewBox="0 0 @w@ @h@">
         hex_path_svg,
         T_path_svg,
         rTRNG_svg,
-        # tmp,
         NULL
       ), collapse = "\n"), svg),
     file)
+
+  if (text2path) {
+    if (system(paste("inkscape -z -l", file, "-T", file)) != 0) {
+      stop("inkscape must be available if 'text2path' is TRUE!")
+    }
+  } else if (inkscape) {
+    if (system(paste("inkscape -z -l", file, file)) != 0) {
+      stop("inkscape is not available!")
+    }
+  }
 
   invisible(file)
 }
