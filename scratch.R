@@ -1,7 +1,6 @@
-#####################
-# !!!!!!!!!!!!!! TO BE REVIEWED
-####################
 
+
+source("rTRNGstickR.R")
 
 # -----
 mirai_dark <- "#333333"
@@ -31,20 +30,24 @@ rTRNGpng <- function(..., svg = "rTRNG.svg", dir = ".", view = TRUE) {
 # -----
 
 do.call(
-  rTRNG_stickR,
+  rTRNGstickR,
   within(list(), {
     n <- 9
     jump_size <- 3
     split_s <- 5 # based on the jump
     sq_cols <- sq_cols_gb(jump_size, split_s, n)
+    sq_cols <- rep(cm.colors(n, 1), len = 1000)
+    # sq_cols <- rep(hsv(seq(0, 1-1/(n+1), len = n), 0.75, 1), len = 1000)
     full_col <- mirai_light
     jump_col <- "#228822"
     split_col <- "#222288"
     n_split <- 9
     n_jump <- 9
-    text_size <- 9.5
-    text_col <- mirai_blue
-    bg_col <- mirai_blue_light
+    text_size <- 0.25
+    text_col <- mirai_dark
+    bg_col <- magrittr_bg
+    inkscape <- FALSE
+    text2path <- FALSE
   })
 )
 rTRNGpng()
@@ -62,12 +65,10 @@ fix_args <- within(list(), {
   split_col <- "#222288"
   n_split <- 9
   n_jump <- 9
-  text_size <- 9.5
+  text_size <- 0.25
+  inkscape <- FALSE
+  text2path <- FALSE
 })
-
-
-# cols <- rep(heat.colors(5, 0.5), len = 1000)
-
 
 rTRNG_9_3_5_green_blue <- function(
   bg_col,
@@ -75,7 +76,7 @@ rTRNG_9_3_5_green_blue <- function(
   box_jump_col,
   box_split_col
 ) {
-  cl <- as.call(c(rTRNG_stickR, fix_args))
+  cl <- as.call(c(rTRNGstickR, fix_args))
   cl$bg_col <- bg_col
   cl$text_col <- text_col
   cl$box_jump_col <- box_jump_col
@@ -86,19 +87,16 @@ rTRNG_9_3_5_green_blue <- function(
 png_dir <- paste("rTRNG_9_3_5_green_blue", Sys.Date(), sep = "-")
 dir.create(png_dir)
 
-txc <- c(mirai = mirai_dark, black = "black")
-bgc <- c(magrittr = magrittr_bg, white = "white")
+txc <- c(miraig = mirai_dark, miraib = mirai_blue)
+bgc <- c(magrittr = magrittr_bg, white = "white", mirailb = mirai_blue_light)
 bxc <- c(col = "col", none = "none", black = "black")
 
-txc <- c(mirai = mirai_dark, miraiblue = mirai_blue)
-bgc <- c(magrittr = magrittr_bg, lightblue = mirai_blue_light)
-bxc <- c(col = "col")
 
 rTRNG_9_3_5_green_blue(
-  text_col = txc[[1]],
-  bg_col = bgc[[1]],
-  box_jump_col = sub("col", fix_args$jump_col, bxc[[1]]),
-  box_split_col = sub("col", fix_args$split_col, bxc[[1]])
+  text_col = txc[1],
+  bg_col = bgc[1],
+  box_jump_col = sub("col", fix_args$jump_col, "none"),
+  box_split_col = sub("col", fix_args$split_col, "none")
 )
 
 
