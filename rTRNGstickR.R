@@ -18,8 +18,7 @@ rTRNGstickR <- function(
   text_size, # rTRNG text size (fraction of hexagon inside)
   text_col, # rTRNG text color
   hex_height = 50.8, # mm
-  text2path = TRUE,
-  inkscape = TRUE
+  postprocess = "rsvg2" # fast and reliable
 ) {
 
 
@@ -361,15 +360,24 @@ viewBox="0 0 @w@ @h@">
       ), collapse = "\n"), svg),
     file)
 
-  if (text2path) {
-    if (system(paste("inkscape -z -l", file, "-T", file)) != 0) {
-      stop("inkscape must be available if 'text2path' is TRUE!")
-    }
-  } else if (inkscape) {
-    if (system(paste("inkscape -z -l", file, file)) != 0) {
-      stop("inkscape is not available!")
-    }
-  }
+  switch(
+    postprocess,
+    "rsvg" = {
+      rsvg::rsvg_svg(file, file, hex_size$x*2.834645669, hex_size$y*2.834645669)
+    },
+    "rsvg2" = {
+      rsvg::rsvg_svg(file, file, 100*hex_size$x*2.834645669, 100*hex_size$y*2.834645669)
+      rsvg::rsvg_svg(file, file, hex_size$x*2.834645669, hex_size$y*2.834645669)
+    },
+    "inkscape-text2path" =
+      if (system(paste("inkscape -z -l", file, "-T", file)) != 0) {
+        stop("inkscape is not available!")
+      },
+    "inkscape" =
+      if (system(paste("inkscape -z -l", file, file)) != 0) {
+        stop("inkscape is not available!")
+      }
+  )
 
   invisible(file)
 }

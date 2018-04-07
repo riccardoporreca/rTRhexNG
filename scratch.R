@@ -46,8 +46,6 @@ do.call(
     text_size <- 0.25
     text_col <- mirai_dark
     bg_col <- magrittr_bg
-    inkscape <- FALSE
-    text2path <- FALSE
   })
 )
 rTRNGpng()
@@ -66,8 +64,6 @@ fix_args <- within(list(), {
   n_split <- 9
   n_jump <- 9
   text_size <- 0.25
-  inkscape <- FALSE
-  text2path <- FALSE
 })
 
 rTRNG_9_3_5_green_blue <- function(

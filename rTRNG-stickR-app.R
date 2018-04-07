@@ -187,8 +187,7 @@ server <- function(input, output) {
       text_col <- input$text_col
       bg_col <- input$bg_col
       n_full <- max(1L, ceiling(input$n * input$n_full_n))
-      inkscape <- input$svg_postprocess == "inkscape"
-      text2path <- input$svg_postprocess == "inkscape-text2path"
+      postprocess <- input$svg_postprocess
     })
   })
 
