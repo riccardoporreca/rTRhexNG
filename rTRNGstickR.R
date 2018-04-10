@@ -85,8 +85,22 @@ viewBox="0 0 @w@ @h@">
     w = hex_size$x
   )
 
-  .rotate_square <- function(angle, x, y) {
+
+  # SVG utils ----
+
+  rotate_square <- function(angle, x, y) {
     sprintf("rotate(%s, %s, %s)", angle, x, y)
+  }
+
+  square_center <- function(squares) {
+    with(squares, data.frame(
+      x = x + sq_size/2 * (cospi(angle/180) - sinpi(angle/180)),
+      y = y + sq_size/2 * (sinpi(angle/180) + cospi(angle/180))
+    ))
+  }
+
+  box <- function(squares) {
+    with(squares, expand.grid(x = range(x) + c(0, sq_size), y = range(y) + c(0, sq_size)))
   }
 
   svg_squares <- function(x, y, fill, stroke = bg_col, angle = 0) {
@@ -102,41 +116,21 @@ viewBox="0 0 @w@ @h@">
            id = id,
            s = sq_size, x = x, y = y,
            stroke = stroke, fill = fill, border = sq_border,
-           rotate = .rotate_square(angle, x, y)
+           rotate = rotate_square(angle, x, y)
       )
     id <<- max(id) + 1
     svg
-  }
-
-  seq_s <- seq(0, by = sq_size, length.out = n)
-  full_seq_sq <- rbind(
-    .df(x = tl_x + sqrt(3)/2 * seq_s, y = tl_y - 1/2 * seq_s, angle = -120),
-    .df(x = tl_x + sqrt(3)/2 * (n*sq_size + sq_size + seq_s), y = tl_y - 1/2 * rev(seq_s), angle = -150),
-    .df(x = tl_x + sqrt(3)/2 * 2*n*sq_size, y = tl_y + seq_s, angle = 0),
-    .df(x = tl_x + sqrt(3)/2 * (2*n*sq_size - seq_s), y = tl_y + n*sq_size + 1/2 * seq_s, angle = 60),
-    .df(x = tl_x + sqrt(3)/2 * rev(seq_s), y = tl_y + n*sq_size + 1/2 * rev(seq_s), angle = 30),
-    .df(x = tl_x, y = tl_y + rev(seq_s), angle = 90),
-    NULL
-  )
-  full_seq_sq$fill <- head(sq_cols, nrow(full_seq_sq))
-
-  .sgn <- function(x) ifelse(x > 0, 1, -1)
-  square_center <- function(squares) {
-    with(squares, data.frame(
-      x = x + sq_size/2 * (cospi(angle/180) - sinpi(angle/180)),
-      y = y + sq_size/2 * (sinpi(angle/180) + cospi(angle/180))
-    ))
   }
 
   svg_path <- function(points, stroke = "black", fill = "none",
                        width, close = FALSE) {
     svg <- .sub(
       '
-  <path
-    id="path-@id@"
-    style="stroke: @stroke@; fill:@fill@; stroke-width:@width@;"
-    d="@d@"
-  />',
+      <path
+      id="path-@id@"
+      style="stroke: @stroke@; fill:@fill@; stroke-width:@width@;"
+      d="@d@"
+      />',
       id = id,
       stroke = stroke,
       fill = fill,
@@ -166,7 +160,7 @@ viewBox="0 0 @w@ @h@">
       cbind(
         square_center(squares),
         corner = c(FALSE, diff(squares$angle) != 0),
-        r = sq_size * (1 + sqrt(2) * cospi(.sgn(-30)*1/4 + -30/180))
+        r = sq_size * (1 + sqrt(2) * cospi(-1/4 + -30/180))
       )
     path <- with(
       centers,
@@ -202,62 +196,6 @@ viewBox="0 0 @w@ @h@">
     id <<- id + 1
     path
   }
-
-
-  hex_sq_svg <- do.call(svg_squares, head(full_seq_sq, n_full))
-
-  hex_path_svg <- svg_squares_path(head(full_seq_sq, n_full + n_path_ext), full_col)
-
-  do_jump <- (jump_size > 0 && n_jump > 0)
-  if (do_jump) {
-    jump_seq_sq <- .df(
-      x = T_x + seq(0, by = sq_size, len = nrow(full_seq_sq) - jump_size),
-      y = T_y,
-      fill = tail(full_seq_sq$fill, -jump_size),
-      stroke = bg_col,
-      angle = 0
-    )
-  }
-
-  do_split <- split_s > 0 && n_split > 0
-  if (do_split) {
-    split_seq_sq <- .df(
-      x = T_x + (split_s - 1) * sq_size,
-      y = T_y + seq(0, by = sq_size, len = n_split + n_path_ext),
-      fill = full_seq_sq$fill[jump_size + split_s],
-      stroke = bg_col,
-      angle = 0
-    )
-  }
-  box <- function(squares) {
-    with(squares, expand.grid(x = range(x) + c(0, sq_size), y = range(y) + c(0, sq_size)))
-  }
-  T_sq_svg <- c(
-    if (do_jump) {
-      c(
-        do.call(svg_squares, head(jump_seq_sq, n_jump)),
-        svg_path(box(head(jump_seq_sq, n_jump))[c(2,1,3,4), ],
-                 box_jump_col, "none", sq_border)
-      )
-    },
-    if (do_split) {
-      c(
-        do.call(svg_squares, head(split_seq_sq, n_split)),
-        svg_path(box(head(split_seq_sq, n_split))[c(4,2,1,3), ],
-                 box_split_col, "none", sq_border)
-      )
-    }
-  )
-
-  T_path_svg <- c(
-    if (do_jump) {
-      svg_squares_path(head(jump_seq_sq, n_jump + n_path_ext), jump_col)
-    },
-    if (do_split) {
-      svg_squares_path(head(split_seq_sq, n_split + n_path_ext), split_col)
-    }
-  )
-
 
   svg_connect_A <- function(from, to, r, stroke) {
     svg <-
@@ -297,24 +235,92 @@ viewBox="0 0 @w@ @h@">
   }
 
 
-  y0 <- T_y + sq_size + text_size
-  xm <- T_x + sq_size*(split_s - 0.5)
-  x0r <- xm - text_size/2 - sq_size/4
-  x0R <- xm + text_size/2 + sq_size/4
-  Dx <- (max(full_seq_sq$x) + sq_size/2 - (x0R - xm) - x0R) / 2 #text_size * 0.8 * sqrt(3)/2
-  Dy <- (with(full_seq_sq, max(y[angle == 0])) + sq_size/2 - y0) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
+  # full sequence ----
+  seq_s <- seq(0, by = sq_size, length.out = n)
+  full_seq_sq <- rbind(
+    .df(x = tl_x + sqrt(3)/2 * seq_s, y = tl_y - 1/2 * seq_s, angle = -120),
+    .df(x = tl_x + sqrt(3)/2 * (n*sq_size + sq_size + seq_s), y = tl_y - 1/2 * rev(seq_s), angle = -150),
+    .df(x = tl_x + sqrt(3)/2 * 2*n*sq_size, y = tl_y + seq_s, angle = 0),
+    .df(x = tl_x + sqrt(3)/2 * (2*n*sq_size - seq_s), y = tl_y + n*sq_size + 1/2 * seq_s, angle = 60),
+    .df(x = tl_x + sqrt(3)/2 * rev(seq_s), y = tl_y + n*sq_size + 1/2 * rev(seq_s), angle = 30),
+    .df(x = tl_x, y = tl_y + rev(seq_s), angle = 90),
+    NULL
+  )
+  full_seq_sq$fill <- head(sq_cols, nrow(full_seq_sq))
+
+  hex_sq_svg <- do.call(svg_squares, head(full_seq_sq, n_full))
+  hex_path_svg <- svg_squares_path(head(full_seq_sq, n_full + n_path_ext), full_col)
+
+  # jump sequence ----
+  do_jump <- (jump_size > 0 && n_jump > 0)
+  if (do_jump) {
+    jump_seq_sq <- .df(
+      x = T_x + seq(0, by = sq_size, len = nrow(full_seq_sq) - jump_size),
+      y = T_y,
+      fill = tail(full_seq_sq$fill, -jump_size),
+      stroke = bg_col,
+      angle = 0
+    )
+  }
+
+  # split sequence ----
+  do_split <- split_s > 0 && n_split > 0
+  if (do_split) {
+    split_seq_sq <- .df(
+      x = T_x + (split_s - 1) * sq_size,
+      y = T_y + seq(0, by = sq_size, len = n_split + n_path_ext),
+      fill = full_seq_sq$fill[jump_size + split_s],
+      stroke = bg_col,
+      angle = 0
+    )
+  }
+
+  # jump&split "T" ----
+  T_sq_svg <- c(
+    if (do_jump) {
+      c(
+        do.call(svg_squares, head(jump_seq_sq, n_jump)),
+        svg_path(box(head(jump_seq_sq, n_jump))[c(2,1,3,4), ],
+                 box_jump_col, "none", sq_border)
+      )
+    },
+    if (do_split) {
+      c(
+        do.call(svg_squares, head(split_seq_sq, n_split)),
+        svg_path(box(head(split_seq_sq, n_split))[c(4,2,1,3), ],
+                 box_split_col, "none", sq_border)
+      )
+    }
+  )
+  T_path_svg <- c(
+    if (do_jump) {
+      svg_squares_path(head(jump_seq_sq, n_jump + n_path_ext), jump_col)
+    },
+    if (do_split) {
+      svg_squares_path(head(split_seq_sq, n_split + n_path_ext), split_col)
+    }
+  )
+
+  # rTRNG text ----
+  txt_y <- T_y + sq_size + text_size
+  txt_x <- T_x + sq_size*(split_s - 0.5)
+  r_x <- txt_x - text_size/2 - sq_size/4
+  R_x <- txt_x + text_size/2 + sq_size/4
+  Dx <- (max(full_seq_sq$x) + sq_size/2 - (R_x - txt_x) - R_x) / 2 #text_size * 0.8 * sqrt(3)/2
+  Dy <- (with(full_seq_sq, max(y[angle == 0])) + sq_size/2 - txt_y) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
 
   rTRNG_svg <- c(
-    # svg_path(points = .df(x = xm, y = c(y0, y0 - text_size)), stroke = "red", width = 0.2),
-    # svg_path(points = .df(x = c(x0R, x0R+2*Dx), y = c(y0, y0+2*Dy)), stroke = "red", width = 0.2),
-    # svg_path(points = .df(x = c(x0r, x0R), y = c(y0, y0)), stroke = "red", width = 0.2),
-    svg_txt("r", x0r, y0, text_size),
-    svg_txt("R", x0R, y0, text_size),
-    svg_txt("N", x0R + Dx, y0 + Dy, text_size),
-    svg_txt("G", x0R + 2*Dx, y0 + 2*Dy, text_size),
+    # svg_path(points = .df(x = txt_x, y = c(txt_y, txt_y - text_size)), stroke = "red", width = 0.2),
+    # svg_path(points = .df(x = c(R_x, R_x+2*Dx), y = c(txt_y, txt_y+2*Dy)), stroke = "red", width = 0.2),
+    # svg_path(points = .df(x = c(r_x, R_x), y = c(txt_y, txt_y)), stroke = "red", width = 0.2),
+    svg_txt("r", r_x, txt_y, text_size),
+    svg_txt("R", R_x, txt_y, text_size),
+    svg_txt("N", R_x + Dx, txt_y + Dy, text_size),
+    svg_txt("G", R_x + 2*Dx, txt_y + 2*Dy, text_size),
     NULL
   )
 
+  # write SVG ----
   writeLines(.sub(
     svg,
     canvas =
@@ -349,6 +355,7 @@ viewBox="0 0 @w@ @h@">
       ), collapse = "\n")
   ), file)
 
+  # post-rpocess SVG ----
   switch(
     postprocess,
     "rsvg" = {
