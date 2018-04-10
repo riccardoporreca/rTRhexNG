@@ -1,19 +1,14 @@
 
-
 source("rTRNGstickR.R")
+source("colors.R")
 
 # -----
-mirai_dark <- "#333333"
-magrittr_bg <- "#f9ecc6"
-mirai_light <- "#5a5a5a"
-mirai_blue <- "#008cc3"
-mirai_blue_light <- "#ace4f3"
 
 sq_cols_gb <- function(jump, split_s, split_p) {
-  cols <- rep("#888888", len = 1000)
-  cols[1 + jump] <- "#66AA66"
-  cols[seq(jump + split_s, by = split_p, 1000)] <- "#6666AA"
-             cols
+  cols <- rep(full_gray, len = 1000)
+  cols[1 + jump] <- jump_blue
+  cols[seq(jump + split_s, by = split_p, 1000)] <- split_green
+  cols
 }
 
 rTRNGpng <- function(..., svg = "rTRNG.svg", dir = ".", view = TRUE) {
@@ -27,7 +22,7 @@ rTRNGpng <- function(..., svg = "rTRNG.svg", dir = ".", view = TRUE) {
   invisible(png)
 }
 
-# -----
+# nominal sticker -----
 
 do.call(
   rTRNGstickR,
@@ -36,34 +31,36 @@ do.call(
     jump_size <- 3
     split_s <- 5 # based on the jump
     sq_cols <- sq_cols_gb(jump_size, split_s, n)
-    sq_cols <- rep(cm.colors(n, 1), len = 1000)
     # sq_cols <- rep(hsv(seq(0, 1-1/(n+1), len = n), 0.75, 1), len = 1000)
     full_col <- mirai_light
-    jump_col <- "#228822"
-    split_col <- "#222288"
+    jump_col <- jumpbox_blue
+    split_col <- splitbox_green
     n_split <- 9
     n_jump <- 9
     text_size <- 0.25
     text_col <- mirai_dark
     bg_col <- magrittr_bg
+    hex_pad <- 0.1 # tiny background border, OK for screen
+    postprocess <- "inkscape-text2path" # preserves the the actual mm units
   })
 )
 rTRNGpng()
 
 
-
 # 9_3_5_green_blue ----
+
 fix_args <- within(list(), {
   n <- 9
   jump_size <- 3
   split_s <- 5 # based on the jump
   sq_cols <- sq_cols_gb(jump_size, split_s, n)
   full_col <- mirai_light
-  jump_col <- "#228822"
-  split_col <- "#222288"
+  jump_col <- jumpbox_blue
+  split_col <- splitbox_green
   n_split <- 9
   n_jump <- 9
   text_size <- 0.25
+  hex_pad <- 0.1
 })
 
 rTRNG_9_3_5_green_blue <- function(
@@ -80,23 +77,14 @@ rTRNG_9_3_5_green_blue <- function(
   eval(cl)
 }
 
-png_dir <- paste("rTRNG_9_3_5_green_blue", Sys.Date(), sep = "-")
-dir.create(png_dir)
-
 txc <- c(miraig = mirai_dark, miraib = mirai_blue)
 bgc <- c(magrittr = magrittr_bg, white = "white", mirailb = mirai_blue_light)
 bxc <- c(col = "col", none = "none", black = "black")
 
-
-rTRNG_9_3_5_green_blue(
-  text_col = txc[1],
-  bg_col = bgc[1],
-  box_jump_col = sub("col", fix_args$jump_col, "none"),
-  box_split_col = sub("col", fix_args$split_col, "none")
-)
-
-
 if (FALSE) {
+  png_dir <- paste("rTRNG_9_3_5_green_blue", Sys.Date(), sep = "-")
+  dir.create(png_dir)
+
   for (bx in names(bxc)) {
     for (bg in names(bgc)) {
       for (tx in names(txc)) {
