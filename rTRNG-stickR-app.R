@@ -1,14 +1,12 @@
 library(shiny)
 library(colourpicker)
 library(rsvg)
+
 source("rTRNGstickR.R")
+source("colors.R")
 
-mirai_dark <- "#333333"
-magrittr_bg <- "#f9ecc6"
-mirai_light <- "#5a5a5a"
-mirai_blue <- "#008cc3"
-mirai_blue_light <- "#ace4f3"
-
+# detect Inkscape
+inkscape <- system2("inkscape", "-V") == 0
 
 # Define UI for app
 ui <- fluidPage(
@@ -21,7 +19,7 @@ ui <- fluidPage(
 
     # Sidebar panel for inputs ----
     sidebarPanel(
-      width = 4,
+      width = 3,
 
       sliderInput(inputId = "n",
                   label = "# of elements per side",
@@ -37,7 +35,7 @@ ui <- fluidPage(
                   min = 0,
                   max = 6,
                   step = 0.1,
-                  value = 0.1,
+                  value = 5.3,
                   animate = animationOptions(
                     interval = 200,
                     loop = FALSE
@@ -56,7 +54,7 @@ ui <- fluidPage(
                   pre = "n_jump=",
                   min = 0,
                   max = 50,
-                  value = 0),
+                  value = 9),
 
       sliderInput(inputId = "split_p",
                   label = "split(p, s): s-th of p sub-sequences",
@@ -77,14 +75,21 @@ ui <- fluidPage(
                   pre = "n_split=",
                   min = 0,
                   max = 50,
-                  value = 0),
+                  value = 9),
 
       sliderInput(inputId = "text_size",
-                  label = "font size",
+                  label = "text size",
                   step = 0.01,
                   min = 0,
                   max = 1,
-                  value = 0),
+                  value = 0.25),
+
+      sliderInput(inputId = "hex_pad",
+                  label = "pad",
+                  step = 0.05,
+                  min = 0,
+                  max = 1,
+                  value = 0.1),
 
       NULL
     ),
@@ -93,8 +98,7 @@ ui <- fluidPage(
     mainPanel(
       width = 8,
 
-
-      plotOutput(outputId = "myImage", height = 600),
+      plotOutput(outputId = "myImage", height = 550),
 
       fluidRow(
 
@@ -105,15 +109,15 @@ ui <- fluidPage(
         column(2,
                colourInput(inputId = "full_fill",
                            label = "full",
-                           value = "#888888")),
+                           value = full_gray)),
         column(2,
                colourInput(inputId = "jump_fill",
                            label = "jump",
-                           value = "#66AA66")),
+                           value = jump_blue)),
         column(2,
                colourInput(inputId = "split_fill",
                            label = "split",
-                           value = "#6666AA"))
+                           value = split_green))
 
       ),
       fluidRow(
@@ -128,23 +132,22 @@ ui <- fluidPage(
         column(2,
                colourInput(inputId = "jump_stroke",
                            label = NULL,
-                           value = "#228822")),
+                           value = jumpbox_blue)),
         column(2,
                colourInput(inputId = "split_stroke",
                            label = NULL,
-                           value = "#222288"))
+                           value = splitbox_green))
 
       ),
 
-      fluidRow(
-        column(2,
-               selectInput("svg_postprocess", label = NULL, #width = "16%",
-                           choices = c("as-is", "inkscape", "inkscape-text2path"))),
-        column(6,
-               downloadButton("save_png", "Save as PNG"),
-               downloadButton("save_svg", "Save as SVG"),
-               downloadButton("save_R", "Download R code"))
-      ),
+      radioButtons("svg_postprocess", label = NULL, inline = TRUE,
+                   choices = c("as-is", "rsvg", "rsvg2", "inkscape", "inkscape-text2path"),
+                   selected = "rsvg2"),
+
+      downloadButton("save_png", "Save as PNG"),
+      downloadButton("save_svg", "Save as SVG"),
+      downloadButton("save_pdf", "Save as PDF"),
+      downloadButton("save_R", "Download R code"),
 
       NULL
 
@@ -187,6 +190,7 @@ server <- function(input, output) {
       text_col <- input$text_col
       bg_col <- input$bg_col
       n_full <- max(1L, ceiling(input$n * input$n_full_n))
+      hex_pad <- input$hex_pad
       postprocess <- input$svg_postprocess
     })
   })
@@ -212,6 +216,13 @@ server <- function(input, output) {
       file.copy(create_sticker(), file)
     })
 
+  output$save_pdf <- downloadHandler(
+    filename = "rTRNG.pdf",
+    content = function(file) {
+      message(file)
+      rsvg_pdf(create_sticker(), file)
+    })
+
   output$save_R <- downloadHandler(
     filename = "rTRNG-stickR.R",
     content = function(file) {
@@ -225,14 +236,15 @@ server <- function(input, output) {
 
   output$myImage <- renderImage({
 
-    outfile <- tempfile("rTRNG-", fileext = ".png")
-    rsvg_png(create_sticker(), outfile, 1200*sqrt(3)/2, 1200)
+    outfile <- create_sticker()
+    # outfile <- tempfile("rTRNG-", fileext = ".png")
+    # rsvg_png(create_sticker(), outfile, 1200*sqrt(3)/2, 1200)
 
     # Return a list containing the filename
     list(src = outfile,
-         contentType = 'image/png',
-         width = 600*sqrt(3)/2,
-         height = 600,
+         # contentType = 'image/svg+xml',
+         width = 550*sqrt(3)/2,
+         height = 550,
          alt = "rTRNG")
   }, deleteFile = FALSE)
 }
