@@ -46,14 +46,13 @@ rTRNGstickR <- function(
   path_size <- sq_size * 0.2
   connector_size <- path_size*0.8
 
-
   # position of the top-left inside vertex
   tl_x <- hex_center$x - sq_size*n * sqrt(3)/2
   tl_y <- hex_center$y - sq_size*n / 2
 
   # top-left position of the jump&split T first element
-  T_x <- tl_x + 2*sq_size
-  T_y <- tl_y + 0.5*sq_size
+  T_x <- tl_x + 2.5*sq_size
+  T_y <- tl_y + sq_size
 
   id <- 1
 
@@ -80,7 +79,7 @@ viewBox="0 0 @w@ @h@">
 
   <rect id="canvas" width="100%" height="100%" fill="@canvas@"/>
 
-@content@
+  @content@
 
 </svg>',
     h = hex_size$y,
@@ -96,13 +95,13 @@ viewBox="0 0 @w@ @h@">
 
   square_center <- function(squares) {
     with(squares, data.frame(
-      x = x + sq_size/2 * (cospi(angle/180) - sinpi(angle/180)),
-      y = y + sq_size/2 * (sinpi(angle/180) + cospi(angle/180))
+      x = x,
+      y = y
     ))
   }
 
   box <- function(squares) {
-    with(squares, expand.grid(x = range(x) + c(0, sq_size), y = range(y) + c(0, sq_size)))
+    with(squares, expand.grid(x = range(x) + c(-1, 1)*sq_size/2, y = range(y) + c(-1, 1)*sq_size/2))
   }
 
   svg_squares <- function(x, y, fill, stroke = bg_col, angle = 0) {
@@ -116,7 +115,7 @@ viewBox="0 0 @w@ @h@">
     transform="@rotate@"
   />',
            id = id,
-           s = sq_size, x = x, y = y,
+           s = sq_size, x = x - sq_size/2, y = y - sq_size/2,
            stroke = stroke, fill = fill, border = sq_border,
            rotate = rotate_square(angle, x, y)
       )
@@ -128,11 +127,11 @@ viewBox="0 0 @w@ @h@">
                        width, close = FALSE) {
     svg <- .sub(
       '
-      <path
-      id="path-@id@"
-      style="stroke: @stroke@; fill:@fill@; stroke-width:@width@;"
-      d="@d@"
-      />',
+  <path
+    id="path-@id@"
+    style="stroke: @stroke@; fill:@fill@; stroke-width:@width@;"
+    d="@d@"
+  />',
       id = id,
       stroke = stroke,
       fill = fill,
@@ -241,14 +240,21 @@ viewBox="0 0 @w@ @h@">
 
 
   # full sequence ----
-  seq_s <- seq(0, by = sq_size, length.out = n)
+  seq_s <- seq(0, by = sq_size, length.out = n) + sq_size/2*(1 + 1/sqrt(3))
+  hex_sq_r <- sq_size * (n + 1/sqrt(3))
   full_seq_sq <- rbind(
-    .df(x = tl_x + sqrt(3)/2 * seq_s, y = tl_y - 1/2 * seq_s, angle = -120),
-    .df(x = tl_x + sqrt(3)/2 * (n*sq_size + sq_size + seq_s), y = tl_y - 1/2 * rev(seq_s), angle = -150),
-    .df(x = tl_x + sqrt(3)/2 * 2*n*sq_size, y = tl_y + seq_s, angle = 0),
-    .df(x = tl_x + sqrt(3)/2 * (2*n*sq_size - seq_s), y = tl_y + n*sq_size + 1/2 * seq_s, angle = 60),
-    .df(x = tl_x + sqrt(3)/2 * rev(seq_s), y = tl_y + n*sq_size + 1/2 * rev(seq_s), angle = 30),
-    .df(x = tl_x, y = tl_y + rev(seq_s), angle = 90),
+    .df(x = hex_center$x + hex_sq_r * cospi(-150/180) + sqrt(3)/2 * (seq_s),
+        y = hex_center$y + hex_sq_r * sinpi(-150/180) - 1/2 * (seq_s), angle = -120),
+    .df(x = hex_center$x + hex_sq_r * cospi(-90/180) + sqrt(3)/2 * (seq_s),
+        y = hex_center$y + hex_sq_r * sinpi(-90/180) + 1/2 * (seq_s), angle = -150),
+    .df(x = hex_center$x + hex_sq_r * cospi(-30/180) + 0 * (seq_s),
+        y = hex_center$y + hex_sq_r * sinpi(-30/180) + 1 * (seq_s), angle = 0),
+    .df(x = hex_center$x + hex_sq_r * cospi(30/180) - sqrt(3)/2 * (seq_s),
+        y = hex_center$y + hex_sq_r * sinpi(30/180) + 1/2 * (seq_s), angle = 60),
+    .df(x = hex_center$x + hex_sq_r * cospi(90/180) - sqrt(3)/2 * (seq_s),
+        y = hex_center$y + hex_sq_r * sinpi(90/180) - 1/2 * (seq_s), angle = 30),
+    .df(x = hex_center$x + hex_sq_r * cospi(150/180) + 0 * (seq_s),
+        y = hex_center$y + hex_sq_r * sinpi(150/180) - 1 * (seq_s), angle = 0),
     NULL
   )
   full_seq_sq$fill <- head(sq_cols, nrow(full_seq_sq))
@@ -314,12 +320,12 @@ viewBox="0 0 @w@ @h@">
   )
 
   # rTRNG text ----
-  txt_y <- T_y + sq_size + text_size
-  txt_x <- T_x + sq_size*(split_s - 0.5)
+  txt_y <- T_y + sq_size/2 + text_size
+  txt_x <- T_x + sq_size*(split_s - 1)
   r_x <- txt_x - text_size/2 - sq_size/4
   R_x <- txt_x + text_size/1.8 + sq_size/4
-  Dx <- (max(full_seq_sq$x) + sq_size/2 - (R_x - txt_x) - R_x) / 2 #text_size * 0.8 * sqrt(3)/2
-  Dy <- (with(full_seq_sq, max(y[angle == 0])) + sq_size - txt_y) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
+  Dx <- (max(full_seq_sq$x) - (R_x - txt_x) - R_x) / 2 #text_size * 0.8 * sqrt(3)/2
+  Dy <- (with(full_seq_sq, max(y[angle == 0])) + sq_size/2 - txt_y) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
 
   rTRNG_svg <- c(
     svg_txt("r", r_x, txt_y, text_size, "middle"),
