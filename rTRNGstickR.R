@@ -20,7 +20,8 @@ rTRNGstickR <- function(
   text_width = 0.025, # fraction of text_size to make the font fatter
   hex_height = 50.8, # mm
   hex_pad = 0, # fraction of the square size
-  postprocess = "rsvg2" # fast and reliable
+  postprocess = "rsvg2", # fast and reliable
+  circle = FALSE
 ) {
 
   # geometry and sizes ----
@@ -32,10 +33,18 @@ rTRNGstickR <- function(
   sq_border_perc <- 0.12
 
   # size of squares
-  sq_size <- hex_size$x / (
-    2 + n * sqrt(3) +
-      2 * (1 - sq_border_perc)*hex_pad # extra space = hex_pad * sq_size
-  )
+  if (circle) {
+    sq_size <- hex_size$x / (
+      1 + 2*n +
+        2 * (1 - sq_border_perc)*hex_pad # extra space = hex_pad * sq_size
+    )
+
+  } else {
+    sq_size <- hex_size$x / (
+      2 + n * sqrt(3) +
+        2 * (1 - sq_border_perc)*hex_pad # extra space = hex_pad * sq_size
+    )
+  }
 
   # actual text size:
   text_size <- text_size * sq_size*n*sqrt(3)
@@ -161,7 +170,7 @@ viewBox="0 0 @w@ @h@">
       cbind(
         square_center(squares),
         corner = c(FALSE, diff(squares$angle) != 0),
-        r = sq_size * (1 + sqrt(2) * cospi(-1/4 + -30/180))
+        r = if (circle) sq_size * (n) else sq_size * (1 + sqrt(2) * cospi(-1/4 + -30/180))
       )
     path <- with(
       centers,
@@ -240,23 +249,31 @@ viewBox="0 0 @w@ @h@">
 
 
   # full sequence ----
-  seq_s <- seq(0, by = sq_size, length.out = n) + sq_size/2*(1 + 1/sqrt(3))
-  hex_sq_r <- sq_size * (n + 1/sqrt(3))
-  full_seq_sq <- rbind(
-    .df(x = hex_center$x + hex_sq_r * cospi(-150/180) + sqrt(3)/2 * (seq_s),
-        y = hex_center$y + hex_sq_r * sinpi(-150/180) - 1/2 * (seq_s), angle = -120),
-    .df(x = hex_center$x + hex_sq_r * cospi(-90/180) + sqrt(3)/2 * (seq_s),
-        y = hex_center$y + hex_sq_r * sinpi(-90/180) + 1/2 * (seq_s), angle = -150),
-    .df(x = hex_center$x + hex_sq_r * cospi(-30/180) + 0 * (seq_s),
-        y = hex_center$y + hex_sq_r * sinpi(-30/180) + 1 * (seq_s), angle = 0),
-    .df(x = hex_center$x + hex_sq_r * cospi(30/180) - sqrt(3)/2 * (seq_s),
-        y = hex_center$y + hex_sq_r * sinpi(30/180) + 1/2 * (seq_s), angle = 60),
-    .df(x = hex_center$x + hex_sq_r * cospi(90/180) - sqrt(3)/2 * (seq_s),
-        y = hex_center$y + hex_sq_r * sinpi(90/180) - 1/2 * (seq_s), angle = 30),
-    .df(x = hex_center$x + hex_sq_r * cospi(150/180) + 0 * (seq_s),
-        y = hex_center$y + hex_sq_r * sinpi(150/180) - 1 * (seq_s), angle = 0),
-    NULL
-  )
+  if (circle) {
+    aa <- seq(-150, by = 360/n/6, length.out = n*6)
+    full_seq_sq <-
+      .df(x = hex_center$x + sq_size * (n) *1* cospi(aa/180),
+          y = hex_center$y + sq_size * (n) *1* sinpi(aa/180),
+          angle = aa + 0*360/n/12)
+  } else {
+    seq_s <- seq(0, by = sq_size, length.out = n) + sq_size/2*(1 + 1/sqrt(3))
+    hex_sq_r <- sq_size * (n + 1/sqrt(3))
+    full_seq_sq <- rbind(
+      .df(x = hex_center$x + hex_sq_r * cospi(-150/180) + sqrt(3)/2 * (seq_s),
+          y = hex_center$y + hex_sq_r * sinpi(-150/180) - 1/2 * (seq_s), angle = -120),
+      .df(x = hex_center$x + hex_sq_r * cospi(-90/180) + sqrt(3)/2 * (seq_s),
+          y = hex_center$y + hex_sq_r * sinpi(-90/180) + 1/2 * (seq_s), angle = -150),
+      .df(x = hex_center$x + hex_sq_r * cospi(-30/180) + 0 * (seq_s),
+          y = hex_center$y + hex_sq_r * sinpi(-30/180) + 1 * (seq_s), angle = 0),
+      .df(x = hex_center$x + hex_sq_r * cospi(30/180) - sqrt(3)/2 * (seq_s),
+          y = hex_center$y + hex_sq_r * sinpi(30/180) + 1/2 * (seq_s), angle = 60),
+      .df(x = hex_center$x + hex_sq_r * cospi(90/180) - sqrt(3)/2 * (seq_s),
+          y = hex_center$y + hex_sq_r * sinpi(90/180) - 1/2 * (seq_s), angle = 30),
+      .df(x = hex_center$x + hex_sq_r * cospi(150/180) + 0 * (seq_s),
+          y = hex_center$y + hex_sq_r * sinpi(150/180) - 1 * (seq_s), angle = 0),
+      NULL
+    )
+  }
   full_seq_sq$fill <- head(sq_cols, nrow(full_seq_sq))
 
   hex_sq_svg <- do.call(svg_squares, head(full_seq_sq, n_full))
@@ -324,8 +341,14 @@ viewBox="0 0 @w@ @h@">
   txt_x <- T_x + sq_size*(split_s - 1)
   r_x <- txt_x - text_size/2 - sq_size/4
   R_x <- txt_x + text_size/1.8 + sq_size/4
-  Dx <- (max(full_seq_sq$x) - (R_x - txt_x) - R_x) / 2 #text_size * 0.8 * sqrt(3)/2
-  Dy <- (with(full_seq_sq, max(y[angle == 0])) + sq_size/2 - txt_y) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
+  if (circle) {
+    Dx <- (hex_center$x + cospi(40/180) * (n-1.5)*sq_size - R_x) / 2 #text_size * 0.8 * sqrt(3)/2
+    Dy <- (hex_center$y + sinpi(40/180) * (n-1.5)*sq_size - txt_y) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
+  } else {
+    Dx <- (max(full_seq_sq$x) - (R_x - txt_x) - R_x) / 2 #text_size * 0.8 * sqrt(3)/2
+    Dy <- (with(full_seq_sq, max(y[angle == 0])) + sq_size/2 - txt_y) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
+  }
+
 
   rTRNG_svg <- c(
     svg_txt("r", r_x, txt_y, text_size, "middle"),
@@ -345,7 +368,12 @@ viewBox="0 0 @w@ @h@">
       if (bg_col %in% c("white", "#FFFFFF")) "lightgray" else "none",
     content =
       paste(c(
-        svg_hex_bg(bg_col),
+        if (circle) {
+          .sub('  <circle cx="@cx@" cy="@cy@" r="@r@" style="fill: @bg@"/>',
+               cx = hex_center$x, cy = hex_center$y, r = hex_center$x, bg = bg_col)
+        } else {
+          svg_hex_bg(bg_col)
+        },
         hex_sq_svg,
         T_sq_svg,
         if (do_jump) {

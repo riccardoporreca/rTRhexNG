@@ -47,6 +47,7 @@ do.call(
     bg_col <- palette$bg # magrittr_bg
     hex_pad <- 0.1 # tiny background border, OK for screen
     postprocess <- "inkscape-text2path" # preserves the the actual mm units
+    circle <- FALSE
   })
 )
 rTRNGpng()
