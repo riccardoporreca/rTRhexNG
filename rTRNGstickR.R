@@ -16,6 +16,8 @@ rTRNGstickR <- function(
   box_split_col = split_col, # color of the split box
   text_size, # rTRNG text size (fraction of hexagon inside)
   text_col, # rTRNG text color
+  text_font = "GothamBook",
+  text_width = 0.025, # fraction of text_size to make the font fatter
   hex_height = 50.8, # mm
   hex_pad = 0, # fraction of the square size
   postprocess = "rsvg2" # fast and reliable
@@ -204,30 +206,33 @@ viewBox="0 0 @w@ @h@">
     id="path-@id@"
     d="M@x1@,@y1@ A@rx@,@ry@ 0 0,@conc@ @x2@,@y2@"
     style="stroke:@stroke@; fill:none; stroke-width:@size@;
-    stroke-dasharray:@da@,@da@; stroke-dashoffset:@do@; stroke-linecap:round;"
+    stroke-dasharray:@da@,@da2@; stroke-dashoffset:@do@; stroke-linecap:round;"
   />',
            id = id,
            x1 = from$x, y1 = from$y, rx = abs(r[1]), ry = abs(tail(r, 1)), x2 = to$x, y2 = to$y,
            stroke = stroke, size = connector_size, conc = 1*(r[1] > 0),
-           da = connector_size*2, do = path_size*1.25
+           da = connector_size*2, da2 = connector_size*3, do = path_size*1.25
       )
     id <<- id + 1
     svg
   }
 
-  svg_txt <- function(txt, x, y, size) {
+  svg_txt <- function(txt, x, y, size, anchor = "middle") {
+    w <- size*0.025 * 1
     if (size > 0) {
       svg <-
         .sub('
   <text
     id="text-@id@"
-    style="text-anchor:middle;font-style:normal;font-variant:normal;
-    font-weight:normal;font-stretch:normal;font-size:@size@;font-family:DejaVu Sans;letter-spacing:0px;word-spacing:0px;
-    fill:@color@;fill-opacity:1;stroke:none"
+    style="text-anchor:@anchor@;font-style:normal;font-variant:normal;
+    font-weight:normal;font-stretch:semi-narrower;font-size:@size@;font-family:@font@;letter-spacing:0px;word-spacing:0px;
+    fill:@color@;fill-opacity:1;stroke:@color@;stroke-width:@w@"
     x="@x@"
     y="@y@"
   >@txt@</text>',
-             id = id, txt = txt, x = x, y = y, size = size, color = text_col
+             id = id, txt = txt, x = x, y = y - w/2, size = size, color = text_col, font = text_font,
+             anchor = anchor,
+             w = w
         )
       id <<- id + 1
       svg
@@ -287,17 +292,24 @@ viewBox="0 0 @w@ @h@">
     if (do_split) {
       c(
         do.call(svg_squares, head(split_seq_sq, n_split)),
-        svg_path(box(head(split_seq_sq, n_split))[c(4,2,1,3), ],
-                 box_split_col, "none", sq_border)
+        NULL
       )
     }
   )
   T_path_svg <- c(
     if (do_jump) {
-      svg_squares_path(head(jump_seq_sq, n_jump + n_path_ext), jump_col)
+      c(
+        svg_squares_path(head(jump_seq_sq, n_jump + n_path_ext), jump_col),
+        NULL
+      )
+
     },
     if (do_split) {
-      svg_squares_path(head(split_seq_sq, n_split + n_path_ext), split_col)
+      c(
+        svg_squares_path(head(split_seq_sq, n_split + n_path_ext), split_col),
+        svg_path(box(head(split_seq_sq, n_split))[c(4,2,1,3), ],
+                 box_split_col, "none", sq_border)
+      )
     }
   )
 
@@ -305,18 +317,18 @@ viewBox="0 0 @w@ @h@">
   txt_y <- T_y + sq_size + text_size
   txt_x <- T_x + sq_size*(split_s - 0.5)
   r_x <- txt_x - text_size/2 - sq_size/4
-  R_x <- txt_x + text_size/2 + sq_size/4
+  R_x <- txt_x + text_size/1.8 + sq_size/4
   Dx <- (max(full_seq_sq$x) + sq_size/2 - (R_x - txt_x) - R_x) / 2 #text_size * 0.8 * sqrt(3)/2
-  Dy <- (with(full_seq_sq, max(y[angle == 0])) + sq_size/2 - txt_y) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
+  Dy <- (with(full_seq_sq, max(y[angle == 0])) + sq_size - txt_y) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
 
   rTRNG_svg <- c(
+    svg_txt("r", r_x, txt_y, text_size, "middle"),
+    svg_txt("R", R_x, txt_y, text_size, "middle"),
+    svg_txt("N", R_x + Dx, txt_y + Dy, text_size, "middle"),
+    svg_txt("G", R_x + 2*Dx, txt_y + 2*Dy, text_size, "middle"),
     # svg_path(points = .df(x = txt_x, y = c(txt_y, txt_y - text_size)), stroke = "red", width = 0.2),
     # svg_path(points = .df(x = c(R_x, R_x+2*Dx), y = c(txt_y, txt_y+2*Dy)), stroke = "red", width = 0.2),
     # svg_path(points = .df(x = c(r_x, R_x), y = c(txt_y, txt_y)), stroke = "red", width = 0.2),
-    svg_txt("r", r_x, txt_y, text_size),
-    svg_txt("R", R_x, txt_y, text_size),
-    svg_txt("N", R_x + Dx, txt_y + Dy, text_size),
-    svg_txt("G", R_x + 2*Dx, txt_y + 2*Dy, text_size),
     NULL
   )
 
