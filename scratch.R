@@ -2,12 +2,15 @@
 source("rTRNGstickR.R")
 source("colors.R")
 
+# palette <- base
+palette <- mesch
+
 # -----
 
 sq_cols_gb <- function(jump, split_s, split_p) {
-  cols <- rep(full_gray, len = 1000)
-  cols[1 + jump] <- jump_blue
-  cols[seq(jump + split_s, by = split_p, 1000)] <- split_green
+  cols <- rep(palette$full_fill, len = 1000)
+  cols[1 + jump] <- palette$jump_fill
+  cols[seq(jump + split_s, by = split_p, 1000)] <- palette$split_fill
   cols
 }
 
@@ -32,14 +35,16 @@ do.call(
     split_s <- 5 # based on the jump
     sq_cols <- sq_cols_gb(jump_size, split_s, n)
     # sq_cols <- rep(hsv(seq(0, 1-1/(n+1), len = n), 0.75, 1), len = 1000)
-    full_col <- mirai_light
-    jump_col <- jumpbox_blue
-    split_col <- splitbox_green
+    full_col <- palette$full_stroke # mirai_light
+    jump_col <- palette$jump_stroke # jumpbox_blue
+    split_col <- palette$split_stroke # splitbox_green
     n_split <- 9
     n_jump <- 9
-    text_size <- 0.25
-    text_col <- mirai_dark
-    bg_col <- magrittr_bg
+    text_size <- 0.23 # 0.25
+    text_col <- palette$txt # mirai_dark
+    text_font <- "GothamBook"
+    text_width <- 0.025
+    bg_col <- palette$bg # magrittr_bg
     hex_pad <- 0.1 # tiny background border, OK for screen
     postprocess <- "inkscape-text2path" # preserves the the actual mm units
   })

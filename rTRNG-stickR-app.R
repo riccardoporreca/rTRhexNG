@@ -5,6 +5,9 @@ library(rsvg)
 source("rTRNGstickR.R")
 source("colors.R")
 
+# palette <- base
+palette <- mesch
+
 # detect Inkscape
 inkscape <- system2("inkscape", "-V") == 0
 
@@ -82,7 +85,7 @@ ui <- fluidPage(
                   step = 0.01,
                   min = 0,
                   max = 1,
-                  value = 0.25),
+                  value = 0.23),
 
       sliderInput(inputId = "hex_pad",
                   label = "pad",
@@ -105,38 +108,38 @@ ui <- fluidPage(
         column(2,
                colourInput(inputId = "bg_col",
                            label = "background/text",
-                           value = magrittr_bg)),
+                           value = palette$bg)),
         column(2,
                colourInput(inputId = "full_fill",
                            label = "full",
-                           value = full_gray)),
+                           value = palette$full_fill)),
         column(2,
                colourInput(inputId = "jump_fill",
                            label = "jump",
-                           value = jump_blue)),
+                           value = palette$jump_fill)),
         column(2,
                colourInput(inputId = "split_fill",
                            label = "split",
-                           value = split_green))
+                           value = palette$split_fill))
 
       ),
       fluidRow(
         column(2,
                colourInput(inputId = "text_col",
                            label = NULL,
-                           value = mirai_dark)),
+                           value = palette$txt)),
         column(2,
                colourInput(inputId = "full_stroke",
                            label = NULL,
-                           value = mirai_light)),
+                           value = palette$full_stroke)),
         column(2,
                colourInput(inputId = "jump_stroke",
                            label = NULL,
-                           value = jumpbox_blue)),
+                           value = palette$jump_stroke)),
         column(2,
                colourInput(inputId = "split_stroke",
                            label = NULL,
-                           value = splitbox_green))
+                           value = palette$split_stroke))
 
       ),
 
@@ -192,6 +195,7 @@ server <- function(input, output) {
       n_full <- max(1L, ceiling(input$n * input$n_full_n))
       hex_pad <- input$hex_pad
       postprocess <- input$svg_postprocess
+      text_font <- "GothamBook"
     })
   })
 
