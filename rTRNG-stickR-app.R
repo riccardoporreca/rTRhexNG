@@ -94,6 +94,10 @@ ui <- fluidPage(
                   max = 1,
                   value = 0.1),
 
+      radioButtons(inputId = "hex_circle",
+                   label = NULL, inline = TRUE,
+                  choices = c("hexagonal", "circular")),
+
       NULL
     ),
 
@@ -196,6 +200,7 @@ server <- function(input, output) {
       hex_pad <- input$hex_pad
       postprocess <- input$svg_postprocess
       text_font <- "GothamBook"
+      circle <- input$hex_circle == "circular"
     })
   })
 
