@@ -29,10 +29,10 @@ rTRNGstickR <- function(
   hex_size <- list(x = hex_height*sqrt(3)/2, y = hex_height)
   hex_center <- lapply(hex_size, `/`, 2)
 
-  # border size => spacing between squares
+  # border size => spacing between squares = 2*border size
   sq_border_perc <- 0.12
 
-  # size of squares
+  # size of squares incl. spacing between them
   if (circle) {
     sq_size <- hex_size$x / (
       1 + 2*n +
@@ -46,14 +46,14 @@ rTRNGstickR <- function(
     )
   }
 
-  # actual text size:
-  text_size <- text_size * sq_size*n*sqrt(3)
-
-  # border size => spacing between squares
+  # border size
   sq_border <- sq_size * sq_border_perc
 
   path_size <- sq_size * 0.2
   connector_size <- path_size*0.8
+
+  # actual text size
+  text_size <- text_size * sq_size*n*sqrt(3)
 
   # position of the top-left inside vertex
   tl_x <- hex_center$x - sq_size*n * sqrt(3)/2
