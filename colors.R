@@ -21,7 +21,8 @@ base <- list(
   split_stroke = splitbox_green
 )
 
-mesch <- list(
+# 2018-04-20
+mesch_V1 <- list(
   bg = "#f8e29c",
   txt = "#4d4732",
   full_fill = "#777b7d",
@@ -32,3 +33,14 @@ mesch <- list(
   split_stroke = "#2c4aa5"
 )
 
+# 2018-04-26
+mesch_V2 <- list(
+  bg = "#f2de82",
+  txt = "#3d3b2b",
+  full_fill = "#676f72",
+  full_stroke = "#2e3033",
+  jump_fill = "#6fcc8d",
+  jump_stroke = "#2c9840",
+  split_fill = "#576dbe",
+  split_stroke = "#3450aa"
+)

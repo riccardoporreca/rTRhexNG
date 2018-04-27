@@ -6,7 +6,7 @@ source("rTRNGstickR.R")
 source("colors.R")
 
 # palette <- base
-palette <- mesch
+palette <- mesch_V2
 
 # detect Inkscape
 inkscape <- system2("inkscape", "-V") == 0
