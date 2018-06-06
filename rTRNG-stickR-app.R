@@ -178,8 +178,6 @@ server <- function(input, output) {
     if (split_ok()) {
       cols[seq(input$jump_size + input$split_s, by = input$split_p, 1000)] <- input$split_fill
     }
-    # rTRNG::TRNGseed(12358)
-    # cols <- hsv(rTRNG::runif_trng(1000))
     cols
   })
 
@@ -188,8 +186,10 @@ server <- function(input, output) {
       file <- tempfile("rTRNG-", fileext = ".svg")
       n <- input$n
       jump_size <- input$jump_size
+      split_p <- input$split_p # based on the jump
       split_s <- input$split_s # based on the jump
       sq_cols <- sq_cols_gb()
+      # sq_cols <- function(x) hsv(x, 0.75, 1)
       full_col <- input$full_stroke
       jump_col <- input$jump_stroke
       split_col <- input$split_stroke
@@ -254,7 +254,6 @@ server <- function(input, output) {
     # Return a list containing the filename
     list(src = outfile,
          # contentType = 'image/svg+xml',
-         # width = 550*sqrt(3)/2,
          height = 550,
          alt = "rTRNG")
   }, deleteFile = FALSE)

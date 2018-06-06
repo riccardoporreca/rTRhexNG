@@ -44,6 +44,7 @@ do.call(
     n_poly <- n_poly
     n <- 9
     jump_size <- 3
+    split_p <- n # based on the jump
     split_s <- 5 # based on the jump
     n_split <- 9
     n_jump <- 9

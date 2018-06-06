@@ -3,13 +3,14 @@ rTRNGstickR <- function(
   n_poly = 6,
   n, # number of elements per side of the polygon
   jump_size, # jump size
-  split_s, # index of sub-sequence [1, n], after jump
-  n_full = 5*n + 3, # nr of full sequence elements
+  split_p = n, # number of sub-sequences, after jump
+  split_s, # index of sub-sequence [1, split_p], after jump
+  n_full = ceiling((n_poly - 0.7) * n), # nr of full sequence elements
   n_jump = 9, # nr of full sequence elements
   n_split = 9, # nr of full sequence elements
   n_path_ext = 2, # number of extra elements for the arrowed paths
   bg_col, # background color
-  sq_cols, # color for the elements in the full sequence
+  sq_cols = function(x) hsv(x, 0.75, 1), # color vector or function for the elements in the full sequence
   full_col, # color of the full sequqnce path
   jump_col, # color of the jump sequqnce path
   split_col, # color of the split sequqnce path
@@ -22,9 +23,12 @@ rTRNGstickR <- function(
   height = 50.8, # mm
   poly_pad = 0, # fraction of the square size
   postprocess = "rsvg2", # fast and reliable
+  seed = 12358, # random seed used if colors are generated randomly via function sq_cols()
   circle = FALSE,
   guides = FALSE
 ) {
+
+  full_highlight_split_jump <- is.function(sq_cols)
 
   if (circle) {
     n_full <- n_full
@@ -289,7 +293,14 @@ viewBox="0 0 @w@ @h@">
       y = poly_center$y + poly_sq_r * .sind(sq_alpha) + .cosd(angles) * (seq_s),
       angle = angles
     )
-  full_seq_sq$fill <- head(sq_cols, nrow(full_seq_sq))
+
+  if (is.function(sq_cols)) {
+    rng <- rTRNG::yarn2$new(seed)
+    full_seq_sq$fill <-
+      sq_cols(rTRNG::runif_trng(nrow(full_seq_sq), engine = rng))
+  } else {
+    full_seq_sq$fill <- head(sq_cols, nrow(full_seq_sq))
+  }
 
   poly_sq_svg <- do.call(svg_squares, head(full_seq_sq, n_full))
   poly_path_svg <- svg_squares_path(head(full_seq_sq, n_full + n_path_ext), full_col)
@@ -297,10 +308,18 @@ viewBox="0 0 @w@ @h@">
   # jump sequence ----
   do_jump <- (jump_size > 0 && n_jump > 0)
   if (do_jump) {
+    jump_sq_cols <-
+      if (is.function(sq_cols)) {
+        rng$seed(seed)
+        rng$jump(jump_size)
+        sq_cols(rTRNG::runif_trng(nrow(full_seq_sq) - jump_size, engine = rng))
+      } else {
+        tail(full_seq_sq$fill, -jump_size)
+      }
     jump_seq_sq <- .df(
       x = T_x + seq(0, by = sq_size, len = nrow(full_seq_sq) - jump_size),
       y = T_y,
-      fill = tail(full_seq_sq$fill, -jump_size),
+      fill = jump_sq_cols,
       stroke = bg_col,
       angle = 0
     )
@@ -309,14 +328,38 @@ viewBox="0 0 @w@ @h@">
   # split sequence ----
   do_split <- split_s > 0 && n_split > 0
   if (do_split) {
+    split_sq_cols <-
+      if (is.function(sq_cols)) {
+        rng$seed(seed)
+        rng$jump(jump_size)
+        rng$split(split_p, split_s)
+        sq_cols(rTRNG::runif_trng(n_split + n_path_ext, engine = rng))
+      } else {
+        sq_cols[seq(jump_size + split_s, by = split_p, len = n_split + n_path_ext)]
+      }
     split_seq_sq <- .df(
       x = T_x + (split_s - 1) * sq_size,
       y = T_y + seq(0, by = sq_size, len = n_split + n_path_ext),
-      fill = full_seq_sq$fill[jump_size + split_s],
+      fill = split_sq_cols,
       stroke = bg_col,
       angle = 0
     )
   }
+
+
+  full_jump_highlight_svg <-
+    if (full_highlight_split_jump && do_jump) {
+      svg_squares_path(head(tail(full_seq_sq, -jump_size), n_jump + n_path_ext), jump_col)
+    }
+
+  full_split_highlight_svg <-
+    if (full_highlight_split_jump && do_split) {
+      full_split_sq <-
+        full_seq_sq[intersect(seq(jump_size + split_s, by = split_p, len = n_split), seq_len(n_full)), ]
+      if (nrow(full_split_sq) > 0L) {
+        do.call(svg_squares, c(full_split_sq, list(stroke = box_split_col)))
+      }
+    }
 
   # jump&split "T" ----
   T_sq_svg <- c(
@@ -324,7 +367,8 @@ viewBox="0 0 @w@ @h@">
       c(
         do.call(svg_squares, head(jump_seq_sq, n_jump)),
         svg_path(box(head(jump_seq_sq, n_jump))[c(2, 1, 3, 4), ],
-                 box_jump_col, "none", sq_border)
+                 box_jump_col, "none", sq_border),
+        NULL
       )
     },
     if (do_split) {
@@ -393,6 +437,7 @@ viewBox="0 0 @w@ @h@">
           svg_poly_bg(bg_col)
         },
         poly_sq_svg,
+        full_split_highlight_svg,
         T_sq_svg,
         if (do_jump) {
           svg_connect_A(square_center(full_seq_sq[1, ]),
@@ -413,6 +458,7 @@ viewBox="0 0 @w@ @h@">
                         split_col)
         },
         poly_path_svg,
+        full_jump_highlight_svg,
         T_path_svg,
         rTRNG_svg,
         if (guides) {
