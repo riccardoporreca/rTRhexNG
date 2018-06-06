@@ -87,16 +87,16 @@ ui <- fluidPage(
                   max = 1,
                   value = 0.23),
 
-      sliderInput(inputId = "hex_pad",
+      sliderInput(inputId = "poly_pad",
                   label = "pad",
                   step = 0.05,
                   min = 0,
                   max = 1,
                   value = 0.1),
 
-      radioButtons(inputId = "hex_circle",
+      radioButtons(inputId = "poly_circle",
                    label = NULL, inline = TRUE,
-                  choices = c("hexagonal", "circular")),
+                   choices = c("polygonal", "circular")),
 
       NULL
     ),
@@ -178,6 +178,8 @@ server <- function(input, output) {
     if (split_ok()) {
       cols[seq(input$jump_size + input$split_s, by = input$split_p, 1000)] <- input$split_fill
     }
+    # rTRNG::TRNGseed(12358)
+    # cols <- hsv(rTRNG::runif_trng(1000))
     cols
   })
 
@@ -197,10 +199,10 @@ server <- function(input, output) {
       text_col <- input$text_col
       bg_col <- input$bg_col
       n_full <- max(1L, ceiling(input$n * input$n_full_n))
-      hex_pad <- input$hex_pad
+      poly_pad <- input$poly_pad
       postprocess <- input$svg_postprocess
       text_font <- "GothamBook"
-      circle <- input$hex_circle == "circular"
+      circle <- input$poly_circle == "circular"
     })
   })
 
@@ -252,7 +254,7 @@ server <- function(input, output) {
     # Return a list containing the filename
     list(src = outfile,
          # contentType = 'image/svg+xml',
-         width = 550*sqrt(3)/2,
+         # width = 550*sqrt(3)/2,
          height = 550,
          alt = "rTRNG")
   }, deleteFile = FALSE)

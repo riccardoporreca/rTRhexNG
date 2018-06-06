@@ -1,6 +1,7 @@
 rTRNGstickR <- function(
   file = "rTRNG.svg",
-  n, # number of elements per side of the hexagon
+  n_poly = 6,
+  n, # number of elements per side of the polygon
   jump_size, # jump size
   split_s, # index of sub-sequence [1, n], after jump
   n_full = 5*n + 3, # nr of full sequence elements
@@ -14,37 +15,59 @@ rTRNGstickR <- function(
   split_col, # color of the split sequqnce path
   box_jump_col = jump_col, # color of the jump box
   box_split_col = split_col, # color of the split box
-  text_size, # rTRNG text size (fraction of hexagon inside)
+  text_size, # rTRNG text size (fraction of polygon inner circle diameter)
   text_col, # rTRNG text color
   text_font = "GothamBook",
   text_width = 0.025, # fraction of text_size to make the font fatter
-  hex_height = 50.8, # mm
-  hex_pad = 0, # fraction of the square size
+  height = 50.8, # mm
+  poly_pad = 0, # fraction of the square size
   postprocess = "rsvg2", # fast and reliable
-  circle = FALSE
+  circle = FALSE,
+  guides = FALSE
 ) {
+
+  if (circle) {
+    n_full <- n_full
+    n_poly <- n * n_poly
+    n <- 1
+  }
 
   # geometry and sizes ----
 
-  hex_size <- list(x = hex_height*sqrt(3)/2, y = hex_height)
-  hex_center <- lapply(hex_size, `/`, 2)
+  .sind <- function(deg) sinpi(deg / 180)
+  .cosd <- function(deg) cospi(deg / 180)
+  .tand <- function(deg) tanpi(deg / 180)
+
+  # sector angles of the plygon sides, starting from the top-middle
+  poly_sector <- 360/n_poly
+  poly_angles <- seq(-90, by = poly_sector, len = n_poly)
+  # start from the closest vetex to 210 deg.
+  start_angle <- which.min(abs(210 - poly_angles))
+  poly_angles <- c(
+    tail(poly_angles, -(start_angle - 1)),
+    head(poly_angles, start_angle - 1)
+  )
+
+  if (circle) {
+    sticker_size <- list(x = height, y = height)
+    poly_r <- height/2
+  } else {
+    sticker_size <- list(x = height*diff(range(.cosd(poly_angles))) /
+                           diff(range(.sind(poly_angles))),
+                         y = height)
+    poly_r <- sticker_size$y / diff(range(.sind(poly_angles)))
+  }
+  poly_center <- list(x = sticker_size$x/2,
+                      y = poly_r)
 
   # border size => spacing between squares = 2*border size
   sq_border_perc <- 0.12
 
   # size of squares incl. spacing between them
-  if (circle) {
-    sq_size <- hex_size$x / (
-      1 + 2*n +
-        2 * (1 - sq_border_perc)*hex_pad # extra space = hex_pad * sq_size
+  sq_size <-
+    2 * poly_r * .sind(poly_sector/2) / (
+      n + 2 * (1 + (1 - sq_border_perc)*poly_pad) * .tand(poly_sector/2)
     )
-
-  } else {
-    sq_size <- hex_size$x / (
-      2 + n * sqrt(3) +
-        2 * (1 - sq_border_perc)*hex_pad # extra space = hex_pad * sq_size
-    )
-  }
 
   # border size
   sq_border <- sq_size * sq_border_perc
@@ -52,12 +75,18 @@ rTRNGstickR <- function(
   path_size <- sq_size * 0.2
   connector_size <- path_size*0.8
 
-  # actual text size
-  text_size <- text_size * sq_size*n*sqrt(3)
+  # inside-polygon outer and inner circle radius
+  in_poly_outer_r <- sq_size * n / .sind(poly_sector/2) / 2
+  in_poly_inner_r <- in_poly_outer_r * .cosd(poly_sector/2)
 
-  # position of the top-left inside vertex
-  tl_x <- hex_center$x - sq_size*n * sqrt(3)/2
-  tl_y <- hex_center$y - sq_size*n / 2
+  # actual text size
+  text_size <- text_size * 2 * in_poly_inner_r
+
+  # position of the starting inside vertex
+  tl_x <-
+    poly_center$x + in_poly_outer_r * .cosd(poly_angles[1])
+  tl_y <-
+    poly_center$y + in_poly_outer_r * .sind(poly_angles[1])
 
   # top-left position of the jump&split T first element
   T_x <- tl_x + 2.5*sq_size
@@ -91,8 +120,8 @@ viewBox="0 0 @w@ @h@">
   @content@
 
 </svg>',
-    h = hex_size$y,
-    w = hex_size$x
+    h = sticker_size$y,
+    w = sticker_size$x
   )
 
 
@@ -156,13 +185,13 @@ viewBox="0 0 @w@ @h@">
     svg
   }
 
-  svg_hex_bg <- function(color) {
+  svg_poly_bg <- function(color) {
 
-    hex_v <- .df(
-      x = hex_center$x + hex_height/2 * cospi(seq(-30, by = 60, len = 6) / 180),
-      y = hex_center$y + hex_height/2 * sinpi(seq(-30, by = 60, len = 6) / 180)
+    poly_v <- .df(
+      x = poly_center$x + poly_r * .cosd(poly_angles),
+      y = poly_center$y + poly_r * .sind(poly_angles)
     )
-    svg_path(hex_v, stroke = "none", fill = color, width = 0, close = TRUE)
+    svg_path(poly_v, stroke = "none", fill = color, width = 0, close = TRUE)
   }
 
   svg_squares_path <- function(squares, stroke) {
@@ -170,7 +199,7 @@ viewBox="0 0 @w@ @h@">
       cbind(
         square_center(squares),
         corner = c(FALSE, diff(squares$angle) != 0),
-        r = if (circle) sq_size * (n) else sq_size * (1 + sqrt(2) * cospi(-1/4 + -30/180))
+        r = sq_size * (1 + 1/.tand(poly_sector/2))/2
       )
     path <- with(
       centers,
@@ -249,35 +278,21 @@ viewBox="0 0 @w@ @h@">
 
 
   # full sequence ----
-  if (circle) {
-    aa <- seq(-150, by = 360/n/6, length.out = n*6)
-    full_seq_sq <-
-      .df(x = hex_center$x + sq_size * (n) *1* cospi(aa/180),
-          y = hex_center$y + sq_size * (n) *1* sinpi(aa/180),
-          angle = aa + 0*360/n/12)
-  } else {
-    seq_s <- seq(0, by = sq_size, length.out = n) + sq_size/2*(1 + 1/sqrt(3))
-    hex_sq_r <- sq_size * (n + 1/sqrt(3))
-    full_seq_sq <- rbind(
-      .df(x = hex_center$x + hex_sq_r * cospi(-150/180) + sqrt(3)/2 * (seq_s),
-          y = hex_center$y + hex_sq_r * sinpi(-150/180) - 1/2 * (seq_s), angle = -120),
-      .df(x = hex_center$x + hex_sq_r * cospi(-90/180) + sqrt(3)/2 * (seq_s),
-          y = hex_center$y + hex_sq_r * sinpi(-90/180) + 1/2 * (seq_s), angle = -150),
-      .df(x = hex_center$x + hex_sq_r * cospi(-30/180) + 0 * (seq_s),
-          y = hex_center$y + hex_sq_r * sinpi(-30/180) + 1 * (seq_s), angle = 0),
-      .df(x = hex_center$x + hex_sq_r * cospi(30/180) - sqrt(3)/2 * (seq_s),
-          y = hex_center$y + hex_sq_r * sinpi(30/180) + 1/2 * (seq_s), angle = 60),
-      .df(x = hex_center$x + hex_sq_r * cospi(90/180) - sqrt(3)/2 * (seq_s),
-          y = hex_center$y + hex_sq_r * sinpi(90/180) - 1/2 * (seq_s), angle = 30),
-      .df(x = hex_center$x + hex_sq_r * cospi(150/180) + 0 * (seq_s),
-          y = hex_center$y + hex_sq_r * sinpi(150/180) - 1 * (seq_s), angle = 0),
-      NULL
+  sq_alpha <- rep(poly_angles, each = n)
+  angles <- sq_alpha + poly_sector/2
+  sq_size/2 * (1 + .tand(poly_sector/2))
+  seq_s <- seq(0, by = sq_size, length.out = n) + sq_size/2 * (1 + .tand(poly_sector/2))
+  poly_sq_r <- in_poly_outer_r + sq_size / 2 / .cosd(poly_sector/2)
+  full_seq_sq <-
+    .df(
+      x = poly_center$x + poly_sq_r * .cosd(sq_alpha) - .sind(angles) * (seq_s),
+      y = poly_center$y + poly_sq_r * .sind(sq_alpha) + .cosd(angles) * (seq_s),
+      angle = angles
     )
-  }
   full_seq_sq$fill <- head(sq_cols, nrow(full_seq_sq))
 
-  hex_sq_svg <- do.call(svg_squares, head(full_seq_sq, n_full))
-  hex_path_svg <- svg_squares_path(head(full_seq_sq, n_full + n_path_ext), full_col)
+  poly_sq_svg <- do.call(svg_squares, head(full_seq_sq, n_full))
+  poly_path_svg <- svg_squares_path(head(full_seq_sq, n_full + n_path_ext), full_col)
 
   # jump sequence ----
   do_jump <- (jump_size > 0 && n_jump > 0)
@@ -308,7 +323,7 @@ viewBox="0 0 @w@ @h@">
     if (do_jump) {
       c(
         do.call(svg_squares, head(jump_seq_sq, n_jump)),
-        svg_path(box(head(jump_seq_sq, n_jump))[c(2,1,3,4), ],
+        svg_path(box(head(jump_seq_sq, n_jump))[c(2, 1, 3, 4), ],
                  box_jump_col, "none", sq_border)
       )
     },
@@ -342,8 +357,8 @@ viewBox="0 0 @w@ @h@">
   r_x <- txt_x - text_size/2 - sq_size/4
   R_x <- txt_x + text_size/1.8 + sq_size/4
   if (circle) {
-    Dx <- (hex_center$x + cospi(40/180) * (n-1.5)*sq_size - R_x) / 2 #text_size * 0.8 * sqrt(3)/2
-    Dy <- (hex_center$y + sinpi(40/180) * (n-1.5)*sq_size - txt_y) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
+    Dx <- (poly_center$x + .cosd(30) * poly_sq_r - (R_x - txt_x) - R_x) / 2 #text_size * 0.8 * sqrt(3)/2
+    Dy <- (poly_center$y + .sind(30) * poly_sq_r - txt_y) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
   } else {
     Dx <- (max(full_seq_sq$x) - (R_x - txt_x) - R_x) / 2 #text_size * 0.8 * sqrt(3)/2
     Dy <- (with(full_seq_sq, max(y[angle == 0])) + sq_size/2 - txt_y) / 2 # Dx / sqrt(3) #text_size * 0.8 * 1/2
@@ -355,10 +370,13 @@ viewBox="0 0 @w@ @h@">
     svg_txt("R", R_x, txt_y, text_size, "middle"),
     svg_txt("N", R_x + Dx, txt_y + Dy, text_size, "middle"),
     svg_txt("G", R_x + 2*Dx, txt_y + 2*Dy, text_size, "middle"),
-    # svg_path(points = .df(x = txt_x, y = c(txt_y, txt_y - text_size)), stroke = "red", width = 0.2),
-    # svg_path(points = .df(x = c(R_x, R_x+2*Dx), y = c(txt_y, txt_y+2*Dy)), stroke = "red", width = 0.2),
-    # svg_path(points = .df(x = c(r_x, R_x), y = c(txt_y, txt_y)), stroke = "red", width = 0.2),
-    NULL
+    if (guides) {
+      c( svg_path(points = .df(x = txt_x, y = c(txt_y, txt_y - text_size)), stroke = "red", width = 0.2),
+         svg_path(points = .df(x = c(R_x, R_x+2*Dx), y = c(txt_y, txt_y+2*Dy)), stroke = "red", width = 0.2),
+         svg_path(points = .df(x = c(r_x, R_x), y = c(txt_y, txt_y)), stroke = "red", width = 0.2),
+         NULL
+      )
+    }
   )
 
   # write SVG ----
@@ -370,11 +388,11 @@ viewBox="0 0 @w@ @h@">
       paste(c(
         if (circle) {
           .sub('  <circle cx="@cx@" cy="@cy@" r="@r@" style="fill: @bg@"/>',
-               cx = hex_center$x, cy = hex_center$y, r = hex_center$x, bg = bg_col)
+               cx = poly_center$x, cy = poly_center$y, r = poly_center$x, bg = bg_col)
         } else {
-          svg_hex_bg(bg_col)
+          svg_poly_bg(bg_col)
         },
-        hex_sq_svg,
+        poly_sq_svg,
         T_sq_svg,
         if (do_jump) {
           svg_connect_A(square_center(full_seq_sq[1, ]),
@@ -394,10 +412,26 @@ viewBox="0 0 @w@ @h@">
                         r = sq_size*(split_s - 1)/2,
                         split_col)
         },
-        hex_path_svg,
+        poly_path_svg,
         T_path_svg,
         rTRNG_svg,
-        NULL
+        if (guides) {
+          c(
+            .sub('  <circle cx="@cx@" cy="@cy@" r="@r@" style="stroke:black; fill:@bg@; stroke-width:@size@"/>',
+                 cx = tl_x, cy = tl_y, r = sq_size*0.1, bg = "black", size = path_size/5),
+            .sub('  <circle cx="@cx@" cy="@cy@" r="@r@" style="stroke:cyan; fill:@bg@; stroke-width:@size@"/>',
+                 cx = poly_center$x, cy = poly_center$y, r = in_poly_inner_r, bg = "none", size = path_size/5),
+            .sub('  <circle cx="@cx@" cy="@cy@" r="@r@" style="stroke:magenta; fill:@bg@; stroke-width:@size@"/>',
+                 cx = poly_center$x, cy = poly_center$y, r = in_poly_inner_r*0.9, bg = "none", size = path_size/5),
+            .sub('  <circle cx="@cx@" cy="@cy@" r="@r@" style="stroke:red; fill:@bg@; stroke-width:@size@"/>',
+                 cx = poly_center$x, cy = poly_center$y, r = in_poly_outer_r, bg = "none", size = path_size/5),
+            .sub('  <circle cx="@cx@" cy="@cy@" r="@r@" style="stroke:green; fill:@bg@; stroke-width:@size@"/>',
+                 cx = poly_center$x, cy = poly_center$y, r = poly_r, bg = "none", size = path_size/5),
+            .sub('  <circle cx="@cx@" cy="@cy@" r="@r@" style="stroke:blue; fill:@bg@; stroke-width:@size@"/>',
+                 cx = poly_center$x, cy = poly_center$y, r = poly_sq_r, bg = "none", size = path_size/5),
+            NULL
+          )
+        }
       ), collapse = "\n")
   ), file)
 
@@ -405,11 +439,11 @@ viewBox="0 0 @w@ @h@">
   switch(
     postprocess,
     "rsvg" = {
-      rsvg::rsvg_svg(file, file, hex_size$x*2.834645669, hex_size$y*2.834645669)
+      rsvg::rsvg_svg(file, file, sticker_size$x*2.834645669, sticker_size$y*2.834645669)
     },
     "rsvg2" = {
-      rsvg::rsvg_svg(file, file, 100*hex_size$x*2.834645669, 100*hex_size$y*2.834645669)
-      rsvg::rsvg_svg(file, file, hex_size$x*2.834645669, hex_size$y*2.834645669)
+      rsvg::rsvg_svg(file, file, 100*sticker_size$x*2.834645669, 100*sticker_size$y*2.834645669)
+      rsvg::rsvg_svg(file, file, sticker_size$x*2.834645669, sticker_size$y*2.834645669)
     },
     "inkscape-text2path" =
       if (system(paste("inkscape -z -l", file, "-T", file)) != 0) {
