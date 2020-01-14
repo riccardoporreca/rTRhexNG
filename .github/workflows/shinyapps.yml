@@ -12,6 +12,8 @@ jobs:
     - name: Run a one-line script
       run: echo Hello, world!
     - name: Run a multi-line script
+      env: # Or as an environment variable
+        SHINYAPPS_SECRET: ${{ secrets.SHINYAPPS_SECRET }}
       run: |
-        echo Add other actions to build,
-        echo test, and deploy your project.
+        Rscript -e "rsconnect::setAccountInfo(name='riccardoporreca', token='2139675380B582458FF0F4AFE10E5626',
+			  secret=Sys.getenv('SHINYAPPS_SECRET'))"
