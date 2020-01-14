@@ -15,7 +15,7 @@ jobs:
       run: echo Hello, world!
     - name: Install Package Dependencies
       run: |-
-        R -e "install.packages('rsconnect')"
+        R -e "install.packages('rsconnect', repos = 'https://cloud.r-project.org')"
     - name: Run a multi-line script
       env: # Or as an environment variable
         SHINYAPPS_SECRET: ${{ secrets.SHINYAPPS_SECRET }}
