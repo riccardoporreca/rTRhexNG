@@ -21,7 +21,7 @@ jobs:
         libcurl4-openssl-dev
     - name: Install Package Dependencies
       run: |-
-        R -e "install.packages('rsconnect', 'png', 'rTRNG', 'rsvg', 'shiny', repos = 'https://cloud.r-project.org')"
+        R -e "install.packages(c('rsconnect', 'colourpicker', 'png', 'rTRNG', 'rsvg', 'shiny'), repos = 'https://cloud.r-project.org')"
     - name: Run a multi-line script
       env: # Or as an environment variable
         SHINYAPPS_SECRET: ${{ secrets.SHINYAPPS_SECRET }}
