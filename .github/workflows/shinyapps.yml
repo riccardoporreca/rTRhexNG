@@ -19,8 +19,8 @@ jobs:
         libxml2-dev \
         libssl-dev \
         libcurl4-openssl-dev \
-        libpng \
-        librsvg2
+        libpng-dev \
+        librsvg2-dev
     - name: Install Package Dependencies
       run: |-
         R -e "install.packages(c('rsconnect', 'colourpicker', 'png', 'rTRNG', 'rsvg', 'shiny'), repos = 'https://cloud.r-project.org')"
