@@ -18,7 +18,9 @@ jobs:
         sudo apt-get update && apt-get install -y --no-install-recommends \
         libxml2-dev \
         libssl-dev \
-        libcurl4-openssl-dev
+        libcurl4-openssl-dev \
+        libpng \
+        librsvg2
     - name: Install Package Dependencies
       run: |-
         R -e "install.packages(c('rsconnect', 'colourpicker', 'png', 'rTRNG', 'rsvg', 'shiny'), repos = 'https://cloud.r-project.org')"
