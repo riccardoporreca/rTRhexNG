@@ -3,7 +3,7 @@ Title: R-generated Hexagon Sticker for rTRNG
 Version: 0.0.0.9000
 Authors@R: 
     c(person("Riccardo", "Porreca", role = c("aut", "cre"),
-             email = "riccardo.porreca@mirai-solutions.com")
+             email = "riccardo.porreca@mirai-solutions.com"))
 Description: R-generated hexagon sticker for rTRNG.
 License: GPL-3
 URL: https://github.com/miraisolutions/rTRhexNG#readme
