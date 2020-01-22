@@ -8,6 +8,10 @@ source("colors.R")
 # palette <- base
 palette <- mesch_V2
 
+dir.create('~/.fonts')
+file.copy("fonts/GothamBookRegular/GothamBookRegular.otf", "~/.fonts")
+system('fc-cache -f ~/.fonts')
+
 # detect Inkscape
 inkscape <- system2("inkscape", "-V") == 0
 
