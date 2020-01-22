@@ -2,3 +2,4 @@
 ^\.Rproj\.user$
 ^app\.R$
 ^\.github/workflows$
+^\.travis\.yml$
