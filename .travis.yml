@@ -10,4 +10,4 @@ deploy:
   provider: script
   script: Rscript -e "print('hello!')"
   on:
-    branch: master
+    branch: as-pkg
