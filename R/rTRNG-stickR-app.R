@@ -258,6 +258,10 @@ server <- function(input, output) {
   }, deleteFile = FALSE)
 }
 
+#' rTRhexNG Shiny App
+#'
+#' @param ... Additional arguments passed to [shiny::shinyApp()]
+#'
 #' @export
 rTRhexNG_app <- function(...) {
   shinyApp(ui = ui, server = server, ...)
