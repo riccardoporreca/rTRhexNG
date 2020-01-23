@@ -14,7 +14,7 @@ ui <- function() {
   fluidPage(
 
     # App title ----
-    titlePanel("rTRNG stickR!"),
+    titlePanel("R-generated hexagon sticker for rTRNG"),
 
     # Sidebar layout with input and output definitions ----
     sidebarLayout(
