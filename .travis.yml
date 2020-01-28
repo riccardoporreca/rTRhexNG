@@ -7,10 +7,10 @@ before_deploy:
 - R CMD INSTALL $PKG_TARBALL
 
 before_cache:
-- Rscript -e 'remotes::install_cran("rsconnect", "pkgload")'
+- Rscript -e 'remotes::install_cran(c("rsconnect"))'
 
 deploy:
   provider: script
   script: Rscript -e 'rsconnect::setAccountInfo(name="riccardoporreca", token="2139675380B582458FF0F4AFE10E5626", secret=Sys.getenv("SHINYAPPS_SECRET"));rsconnect::deployApp(account = "riccardoporreca", appName = "rTRhexNG")'
   on:
-    branch: as-pkg
+    branch: as-pkg-wip
