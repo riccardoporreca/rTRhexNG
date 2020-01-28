@@ -11,7 +11,7 @@ deploy:
   script:
   - >-
     Rscript
-    -e 'account_info <- lapply(paste("SHINYAPPS", sep = "_", c("ACCOUNT", "TOKEN", "SECRET")), Sys.getenv)'
+    -e 'account_info <- lapply(paste0("SHINYAPPS_", c("ACCOUNT", "TOKEN", "SECRET")), Sys.getenv)'
     -e 'do.call(rsconnect::setAccountInfo, account_info)'
     -e 'rsconnect::deployApp(appName = "rTRhexNG")'
   on:
