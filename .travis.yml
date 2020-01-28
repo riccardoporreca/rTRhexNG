@@ -15,4 +15,4 @@ deploy:
     -e 'do.call(rsconnect::setAccountInfo, account_info)'
     -e 'rsconnect::deployApp(appName = "rTRhexNG")'
   on:
-    branch: as-pkg
+    branch: master
