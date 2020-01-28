@@ -12,6 +12,10 @@ before_cache:
 deploy:
   provider: script
   script:
-  - Rscript -e 'account_info <- lapply(paste("SHINYAPPS", sep = "_", c("ACCOUNT", "TOKEN", "SECRET")), Sys.getenv)' -e 'do.call(rsconnect::setAccountInfo, account_info)' -e 'rsconnect::deployApp(appName = "rTRhexNG")'
+  - >
+    Rscript
+    -e 'account_info <- lapply(paste("SHINYAPPS", sep = "_", c("ACCOUNT", "TOKEN", "SECRET")), Sys.getenv)'
+    -e 'do.call(rsconnect::setAccountInfo, account_info)'
+    -e 'rsconnect::deployApp(appName = "rTRhexNG")'
   on:
     branch: as-pkg
