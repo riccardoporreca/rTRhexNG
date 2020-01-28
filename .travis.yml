@@ -11,6 +11,11 @@ before_cache:
 
 deploy:
   provider: script
-  script: Rscript -e 'rsconnect::setAccountInfo(name="riccardoporreca", token="2139675380B582458FF0F4AFE10E5626", secret=Sys.getenv("SHINYAPPS_SECRET"));rsconnect::deployApp(account = "riccardoporreca", appName = "rTRhexNG")'
+  script:
+  - |
+    Rscript
+    -e 'account_info <- lapply(paste("SHINYAPPS", sep = "_", c("ACCOUNT", "TOKEN", "SECRET")), Sys.getenv)'
+    -e 'do.call(rsconnect::setAccountInfo, account_info)'
+    -e rsconnect::deployApp(appName = "rTRhexNG")'
   on:
-    branch: as-pkg-wip
+    branch: as-pkg
