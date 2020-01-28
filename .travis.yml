@@ -3,9 +3,6 @@
 language: R
 cache: packages
 
-before_deploy:
-- R CMD INSTALL $PKG_TARBALL
-
 before_cache:
 - Rscript -e 'remotes::install_cran(c("rsconnect"))'
 
